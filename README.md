@@ -12,7 +12,7 @@ shared http goodies for the lazy ones.
 ## packages
 
 * [x] httpx/client - *abstraction for http requests*
-* [-] httpx/cache - *cache control for http servers*
+* [x] httpx/cache - *cache control for http servers*
 * [x] httpx/router - *http router*
 * [x] httpx/radix - *radix tree router*
 * [ ] httpx/ctx - *context helpers*
