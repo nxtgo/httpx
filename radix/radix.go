@@ -14,20 +14,25 @@ type Node[H any] struct {
 }
 
 type Router[H any] struct {
-	root *Node[H]
+	root   *Node[H]
+	static map[string]H
 }
 
 // creates a new empty router
 func NewRouter[H any]() *Router[H] {
 	return &Router[H]{
-		root: &Node[H]{
-			children: make(map[string]*Node[H]),
-		},
+		root:   &Node[H]{children: make(map[string]*Node[H])},
+		static: make(map[string]H),
 	}
 }
 
 // adds a new route
 func (r *Router[H]) AddRoute(path string, handler H) {
+	if !strings.Contains(path, ":") {
+		r.static[path] = handler
+		return
+	}
+
 	segments := splitPath(path)
 	current := r.root
 
@@ -64,23 +69,33 @@ func (r *Router[H]) AddRoute(path string, handler H) {
 }
 
 // wiggly wiggly
-func (r *Router[H]) Lookup(path string) (handler *H, params map[string]string) {
+func (r *Router[H]) Lookup(path string) (handler H, params map[string]string) {
+	// check static map first
+	if h, ok := r.static[path]; ok {
+		return h, nil
+	}
+
+	// dynamic routes
 	segments := splitPath(path)
 	current := r.root
-	params = make(map[string]string)
+	var p map[string]string
 
 	for _, seg := range segments {
 		if child, ok := current.children[seg]; ok {
 			current = child
 		} else if paramChild, ok := current.children[":"]; ok {
 			current = paramChild
-			params[current.param] = seg
+			if p == nil {
+				p = make(map[string]string)
+			}
+			p[current.param] = seg
 		} else {
-			return nil, nil
+			var zero H
+			return zero, nil
 		}
 	}
 
-	return &current.handler, params
+	return current.handler, p
 }
 
 func splitPath(path string) []string {
